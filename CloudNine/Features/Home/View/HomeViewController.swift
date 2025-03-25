@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Combine
 
 class HomeViewController: UIViewController {
     
@@ -15,7 +16,11 @@ class HomeViewController: UIViewController {
     var layoutStyle = LayoutState.grid
     
     lazy var errorStateView = ErrorStateView()
-        
+    
+    var viewModel: HomeViewModelProtocol?
+    
+    private var cancellables = Set<AnyCancellable>()
+    
     override func viewDidLoad() {
         self.title = "Home Page"
         self.view.backgroundColor = .bgGrey

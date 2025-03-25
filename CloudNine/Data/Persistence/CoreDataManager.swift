@@ -11,7 +11,9 @@ import UIKit
 protocol CoreDataManagerProtocol {
     var context: NSManagedObjectContext { get }
     func fetchData<T: NSManagedObject>(of type: T.Type) -> [T]
-    func updateProductEntity(with items: [Product])
+    
+    func updateProductEntity(with items: [ProductResponse])
+    func saveProducts(_ products: [ProductResponse])
 }
 
 struct CoreDataManager: CoreDataManagerProtocol {
@@ -25,9 +27,33 @@ struct CoreDataManager: CoreDataManagerProtocol {
     }
 }
 
-
+// MARK: - Product Methods
 extension CoreDataManager {
-    func updateProductEntity(with items: [Product]) {
+    
+    func saveProducts(_ products: [ProductResponse]) {
+        context.perform {
+            for (index, productResponse) in products.enumerated() {
+                let product = Product(context: self.context)
+                product.title           = productResponse.title
+                product.price           = productResponse.price ?? 0.0
+                product.category        = productResponse.category
+                product.desc            = productResponse.description
+                product.id              = Int64(productResponse.id ?? 0)
+                product.imageURL        = productResponse.image
+                product.orderNumber     = Int64(index) // to make sure ordering is correct.
+                product.rateCount       = Int64(productResponse.rating?.count ?? 0)
+                product.rating          = productResponse.rating?.rate ?? 0.0
+            }
+            
+            do {
+                try self.context.save()
+            } catch {
+                print("Failed to save products: \(error)")
+            }
+        }
+    }
+    
+    func updateProductEntity(with items: [ProductResponse]) {
         context.perform {
             
             let fetchRequest = Product.fetchRequest()
@@ -39,37 +65,38 @@ extension CoreDataManager {
             var existingProductsDict = [String: Product]()
             existingProducts?.forEach { existingProductsDict["\($0.id)"] = $0 }
             
-            for item in items {
-                if let existingProduct = existingProductsDict["\(item.id)"] {
+            for (index, item) in items.enumerated() {
+                if let existingProduct = existingProductsDict["\(item.id ?? 0)"] {
                     
                     existingProduct.title = item.title
-                    existingProduct.price = item.price
+                    existingProduct.price = item.price ?? 0.0
                     existingProduct.category = item.category
-                    existingProduct.desc = item.desc
-                    existingProduct.id = item.id
-                    existingProduct.imageURL = item.imageURL
-                    existingProduct.orderNumber = item.orderNumber
-                    existingProduct.rateCount = item.rateCount
-                    existingProduct.rating = item.rating
+                    existingProduct.desc = item.description
+                    existingProduct.id = Int64(item.id ?? 0)
+                    existingProduct.imageURL = item.image
+                    existingProduct.orderNumber = Int64(index)
+                    existingProduct.rateCount = Int64(item.rating?.count ?? 0)
+                    existingProduct.rating = item.rating?.rate ?? 0.0
                     
                 } else {
                     let newProduct = Product(context: context)
                     
-                    newProduct.price = item.price
+                    newProduct.title = item.title
+                    newProduct.price = item.price ?? 0.0
                     newProduct.category = item.category
-                    newProduct.desc = item.desc
-                    newProduct.id = item.id
-                    newProduct.imageURL = item.imageURL
-                    newProduct.orderNumber = item.orderNumber
-                    newProduct.rateCount = item.rateCount
-                    newProduct.rating = item.rating
-                    newProduct.price = item.price
+                    newProduct.desc = item.description
+                    newProduct.id = Int64(item.id ?? 0)
+                    newProduct.imageURL = item.image
+                    newProduct.orderNumber = Int64(index)
+                    newProduct.rateCount = Int64(item.rating?.count ?? 0)
+                    newProduct.rating = item.rating?.rate ?? 0.0
                 }
             }
             
             let fetchAllRequest: NSFetchRequest<Product> = Product.fetchRequest()
+            
             if let allProducts = try? context.fetch(fetchAllRequest) {
-                let productsToDelete = allProducts.filter { !ids.contains($0.id) }
+                let productsToDelete = allProducts.filter { !ids.contains(Int($0.id)) }
                 productsToDelete.forEach { context.delete($0) }
             }
             

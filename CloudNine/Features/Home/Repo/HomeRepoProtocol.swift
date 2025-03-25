@@ -6,5 +6,5 @@
 //
 
 protocol HomeRepoProtocol {
-    
+    func fetchProducts(limit: Int) async throws -> [Product]
 }
