@@ -9,10 +9,12 @@ import UIKit
 
 class HomeViewController: UIViewController {
     
-    let gridImage = UIImage(named: "grid")
-    let listImage = UIImage(named: "list")
+    let gridImage = UIImage(named: "grid")?.withTintColor(.label)
+    let listImage = UIImage(named: "list")?.withTintColor(.label)
     
     var layoutStyle = LayoutState.grid
+    
+    lazy var errorStateView = ErrorStateView()
         
     override func viewDidLoad() {
         self.title = "Home Page"

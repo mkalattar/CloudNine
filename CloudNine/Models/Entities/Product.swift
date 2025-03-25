@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - Product
-struct Product: Codable {
+struct ProductResponse: Codable {
     let id: Int?
     let title: String?
     let price: Double?
