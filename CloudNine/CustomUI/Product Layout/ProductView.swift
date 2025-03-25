@@ -65,7 +65,7 @@ class ProductView: UIView {
     private func createImageView() -> UIImageView {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
-        imageView.backgroundColor = .systemGray6
+        imageView.backgroundColor = .bgGrey
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 16
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -165,7 +165,7 @@ class ProductView: UIView {
         
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.locale = Locale.current // Uses the user's locale
+        formatter.locale = Locale.current
         
         if let formattedPrice = formatter.string(from: NSNumber(value: price)) {
             self.priceLabel.text = formattedPrice
@@ -180,7 +180,6 @@ class ProductView: UIView {
         let starAttachment = NSTextAttachment()
         starAttachment.image = UIImage(systemName: "star.fill", withConfiguration: imgConfig)?.withTintColor(.greenMint,
                                                                                renderingMode: .alwaysOriginal)
-//        starAttachment.bounds = CGRect(x: 0, y: -2, width: 14, height: 14)
         
         let starString = NSAttributedString(attachment: starAttachment)
         let ratingString = NSAttributedString(string: " \(rating ?? 0.0) ", attributes: [
