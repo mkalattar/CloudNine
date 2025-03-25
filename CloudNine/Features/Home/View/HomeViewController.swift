@@ -8,9 +8,10 @@
 import UIKit
 
 class HomeViewController: UIViewController {
-    
-    
-    
+        
     override func viewDidLoad() {
+        self.title = "Home Page"
+        self.view.backgroundColor = .systemGray6
+        self.navigationController?.navigationBar.prefersLargeTitles = true
     }
 }

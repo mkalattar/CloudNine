@@ -7,9 +7,10 @@
 
 import UIKit
 
-class ProductGridView: UIView {
+class ProductView: UIView {
     
     // MARK: - Variables & UI Elements
+    private var layout: LayoutState = .grid
     
     private lazy var productImageView: UIImageView = {
         return createImageView()
@@ -38,6 +39,12 @@ class ProductGridView: UIView {
         setupView()
     }
     
+    init(layout: LayoutState) {
+        super.init(frame: .zero)
+        self.layout = layout
+        self.setupView()
+    }
+    
     // MARK: - Private methods
     private func setupView() {
         backgroundColor = .systemBackground
@@ -47,7 +54,12 @@ class ProductGridView: UIView {
         addSubview(priceLabel)
         addSubview(ratingLabel)
         
-        constraintLayout()
+        switch layout {
+        case .grid:
+            constraintGridLayout()
+        case .list:
+            constraintListLayout()
+        }
     }
     
     private func createImageView() -> UIImageView {
@@ -63,7 +75,7 @@ class ProductGridView: UIView {
     
     private func createTitleLabel() -> UILabel {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.font = .systemFont(ofSize: layout == .grid ? 12 : 14, weight: .medium)
         label.numberOfLines = 2
         label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -73,7 +85,7 @@ class ProductGridView: UIView {
     
     private func createPriceLabel() -> UILabel {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .regular)
+        label.font = .systemFont(ofSize: layout == .grid ? 12 : 14, weight: .regular)
         label.numberOfLines = 1
         label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -90,8 +102,7 @@ class ProductGridView: UIView {
         return label
     }
     
-    private func constraintLayout() {
-        
+    private func constraintGridLayout() {
         NSLayoutConstraint.activate([
             // productImageView constraints
             productImageView.topAnchor.constraint(equalTo: topAnchor, constant: 3),
@@ -113,6 +124,30 @@ class ProductGridView: UIView {
             ratingLabel.topAnchor.constraint(equalTo: priceLabel.bottomAnchor, constant: 2),
             ratingLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
             ratingLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+        ])
+    }
+    
+    private func constraintListLayout() {
+        NSLayoutConstraint.activate([
+            // productImageView constraints
+            productImageView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            productImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            productImageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            productImageView.widthAnchor.constraint(equalToConstant: 100),
+            
+            // titleLabel constraints
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            titleLabel.leadingAnchor.constraint(equalTo: productImageView.trailingAnchor, constant: 6),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            
+            // priceLabel constraints
+            ratingLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+            ratingLabel.leadingAnchor.constraint(equalTo: productImageView.trailingAnchor, constant: 6),
+            ratingLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+            
+            // rating constraints
+            priceLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
+            priceLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
         ])
     }
     
@@ -140,7 +175,7 @@ class ProductGridView: UIView {
     }
     
     func set(rating: Double?, peopleCount: Int?) {
-        let imgConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .bold, scale: .medium)
+        let imgConfig = UIImage.SymbolConfiguration(pointSize: layout == .grid ? 12 : 14, weight: .bold, scale: .medium)
         
         let starAttachment = NSTextAttachment()
         starAttachment.image = UIImage(systemName: "star.fill", withConfiguration: imgConfig)?.withTintColor(.greenMint,
@@ -149,12 +184,12 @@ class ProductGridView: UIView {
         
         let starString = NSAttributedString(attachment: starAttachment)
         let ratingString = NSAttributedString(string: " \(rating ?? 0.0) ", attributes: [
-            .font: UIFont.systemFont(ofSize: 10, weight: .medium),
+            .font: UIFont.systemFont(ofSize: layout == .grid ? 10 : 12, weight: .medium),
             .foregroundColor: UIColor.label
         ])
         
         let peopleCountString = NSAttributedString(string: "(\(peopleCount ?? 0))", attributes: [
-            .font: UIFont.systemFont(ofSize: 10, weight: .medium),
+            .font: UIFont.systemFont(ofSize: layout == .grid ? 10 : 12, weight: .medium),
             .foregroundColor: UIColor.label
         ])
         
@@ -165,4 +200,8 @@ class ProductGridView: UIView {
         
         ratingLabel.attributedText = fullRatingString
     }
+}
+
+enum LayoutState {
+    case grid, list
 }
