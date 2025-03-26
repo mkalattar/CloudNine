@@ -30,6 +30,7 @@ class ProductGridCell: UICollectionViewCell {
             productGridView.showAnimatedGradientSkeleton()
         } else {
             productGridView.stopSkeletonAnimation()
+            productGridView.hideSkeleton()
             
             productGridView.setImage(url: product.image)
             productGridView.set(title: product.title)

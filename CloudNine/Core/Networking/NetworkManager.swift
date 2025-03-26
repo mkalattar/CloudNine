@@ -37,6 +37,7 @@ enum CloudNineError: LocalizedError {
     case decodingError(underlying: Error)
     case badRequest
     case unknownError
+    case poorOrNoConnection
     
     var errorDescription: String? {
         switch self {
@@ -50,6 +51,8 @@ enum CloudNineError: LocalizedError {
             return "Invalid request. Please check your parameters."
         case .unknownError:
             return "Something wrong happened, Retry again."
+        case .poorOrNoConnection:
+            return "It appears that you might be offline. Check your internet connection and try again."
         }
     }
 }
@@ -104,7 +107,6 @@ class NetworkRequestBuilder: NetworkBuilderProtocol {
 
 class NetworkManager: NetworkManagerProtocol {
     private let session: URLSession
-    private var isFetchingTracker: [String: Bool] = [:] // Handles not calling the same API while it's fetching still.
     
     init(session: URLSession = .shared) {
         self.session = session

@@ -14,61 +14,69 @@ protocol HomeViewModelProtocol {
     func viewDidLoad()
     func changeLayoutStyle()
     func getCurrentLayoutStyle() -> LayoutStyle
+    func getProducts() -> [ProductResponse]
     
     // Outputs
     var productsPublisher: Published<[ProductResponse]?>.Publisher { get }
-    var isLoadingPublisher: Published<Bool?>.Publisher { get }
     var isShimmeringPublisher: Published<Bool?>.Publisher { get }
     var errorMessagePublisher: Published<String?>.Publisher { get }
 }
 
 class HomeViewModel: HomeViewModelProtocol {
     var homeRepo: HomeRepoProtocol
-    var userDefaultManager: UserDefaultsManagerProtocol
+    var nwPathManager: NetworkPathManager
+    
     var paginationNumber: Int = 7
     
     @Published var products: [ProductResponse]?
-    @Published var isLoading: Bool?
     @Published var isShimmering: Bool?
     @Published var errorMessage: String?
     
     var productsPublisher: Published<[ProductResponse]?>.Publisher { $products }
-    var isLoadingPublisher: Published<Bool?>.Publisher { $isLoading }
     var isShimmeringPublisher: Published<Bool?>.Publisher { $isShimmering }
     var errorMessagePublisher: Published<String?>.Publisher { $errorMessage }
     
-    init(homeRepo: HomeRepoProtocol, userDefaultManager: UserDefaultsManagerProtocol) {
+    var layoutStyle = LayoutStyle.grid
+    
+    init(homeRepo: HomeRepoProtocol, nwPathManager: NetworkPathManager) {
         self.homeRepo = homeRepo
-        self.userDefaultManager = userDefaultManager
+        self.nwPathManager = nwPathManager
     }
     
     func viewDidLoad() {
+        isShimmering = true
+        nwPathManager.noConnectivityAction = {
+            self.errorMessage = CloudNineError.poorOrNoConnection.localizedDescription
+        }
+        nwPathManager.startMonitoring()
         Task {
-            isShimmering = true
             await fetchProducts()
         }
     }
     
     func changeLayoutStyle() {
-        if userDefaultManager.value(forKey: "isLayoutStyleGrid") == true {
-            userDefaultManager.save(false, forKey: "isLayoutStyleGrid")
+        if layoutStyle == .grid {
+            layoutStyle = .list
         } else {
-            userDefaultManager.save(true, forKey: "isLayoutStyleGrid")
+            layoutStyle = .grid
         }
+        
+//        if userDefaultManager.value(forKey: "isLayoutStyleGrid") == true {
+//            userDefaultManager.save(false, forKey: "isLayoutStyleGrid")
+//        } else {
+//            userDefaultManager.save(true, forKey: "isLayoutStyleGrid")
+//        }
     }
     
     func getCurrentLayoutStyle() -> LayoutStyle {
-        return (userDefaultManager.value(forKey: "isLayoutStyleGrid") == true ? .grid : .list)
+        return self.layoutStyle
+//        return (userDefaultManager.value(forKey: "isLayoutStyleGrid") == true ? .grid : .list)
     }
     
     func fetchProducts(incrementPagination: Bool = false) async {
-        if isShimmering == false {
-            isLoading = true
-        }
         
         do {
             self.isShimmering = false
-            self.isLoading = false
             
             products = try await homeRepo.fetchProducts(limit: paginationNumber)
             
@@ -77,9 +85,13 @@ class HomeViewModel: HomeViewModelProtocol {
             }
             
         } catch {
+            self.isShimmering = false
             products = homeRepo.fetchCache()
             self.errorMessage = error.localizedDescription
-            self.isLoading = false
         }
+    }
+    
+    func getProducts() -> [ProductResponse] {
+        return self.products ?? []
     }
 }

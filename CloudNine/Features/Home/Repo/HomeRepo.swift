@@ -17,7 +17,7 @@ struct HomeRepo: HomeRepoProtocol {
     var coreDataManager: CoreDataManagerProtocol
     var networkManager: NetworkManagerProtocol
     
-    func fetchProducts(limit: Int) async throws -> [ProductResponse] { // to return both cached data and errors together
+    func fetchProducts(limit: Int) async throws -> [ProductResponse] {
         
         do {
             let products = try await networkManager.performRequest(

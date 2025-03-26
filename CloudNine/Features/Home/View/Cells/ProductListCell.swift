@@ -30,6 +30,7 @@ class ProductListCell: UICollectionViewCell {
             productListView.showAnimatedGradientSkeleton()
         } else {
             productListView.stopSkeletonAnimation()
+            productListView.hideSkeleton()
             
             productListView.setImage(url: product.image)
             productListView.set(title: product.title)

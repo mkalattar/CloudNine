@@ -36,6 +36,7 @@ class HomeViewController: UIViewController {
         self.setupDataSource()
         self.subscribeToFetchProducts()
         self.subscribeToShimmering()
+        self.subscribeToErrorMsgs()
         
         viewModel?.viewDidLoad()
     }
@@ -44,6 +45,7 @@ class HomeViewController: UIViewController {
         viewModel?.isShimmeringPublisher.sink(receiveValue: { isShimmering in
             DispatchQueue.main.async {
                 if isShimmering ?? false {
+                    self.isShimmering = true
                     self.applySkeletonSource()
                 } else {
                     self.isShimmering = false
@@ -52,15 +54,24 @@ class HomeViewController: UIViewController {
         }).store(in: &cancellables)
     }
     
-//    private func subscribeToErrorMsgs() {
-//        viewModel?.errorMessagePublisher.sink(receiveValue: { errorMsg in
-//            guard let errorMsg else { return }
-//            DispatchQueue.main.async { [weak self] in
-//                
-//            }
-//        })
-//        .store(in: &cancellables)
-//    }
+    private func subscribeToErrorMsgs() {
+        viewModel?.errorMessagePublisher.sink(receiveValue: { errorMsg in
+            guard let errorMsg else { return }
+            DispatchQueue.main.async { [weak self] in
+                let alert = UIAlertController(title: "Uh Oh!", message: errorMsg, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Retry", style: .default, handler: { _ in
+                    Task {
+                        await self?.viewModel?.fetchProducts(incrementPagination: false)
+                    }
+                }))
+                
+                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                
+                self?.present(alert, animated: true)
+            }
+        })
+        .store(in: &cancellables)
+    }
     
     private func subscribeToFetchProducts() {
         
@@ -77,8 +88,10 @@ class HomeViewController: UIViewController {
         viewModel?.changeLayoutStyle()
         
         self.setNaivgationControllerRightBtn()
-        self.collectionView.collectionViewLayout = (currentLayoutStyle == .grid) ? createGridLayout() : createListLayout()
-        self.collectionView.reloadData()
+        
+        self.collectionView.setCollectionViewLayout((currentLayoutStyle == .grid) ? createGridLayout() : createListLayout(), animated: false) { finished in
+            self.collectionView.reloadData()
+        }
     }
     
     private func setNaivgationControllerRightBtn() {
@@ -112,7 +125,7 @@ extension HomeViewController {
         view.addSubview(collectionView)
         
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
+            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -120,12 +133,12 @@ extension HomeViewController {
     }
     
     private func applySkeletonSource() {
-        self.isShimmering = true
-        
         var snapshot = NSDiffableDataSourceSnapshot<Section, ProductResponse>()
         snapshot.appendSections([.main])
         
-        let placeholders = Array(repeating: ProductResponse(id: Int.random(in: 1...100), title: nil, price: nil, description: nil, category: nil, image: nil, rating: nil), count: 1)
+        let placeholders = (1...5).map { _ in
+            ProductResponse(id: nil, title: nil, price: nil, description: nil, category: nil, image: nil, rating: nil)
+        }
         
         snapshot.appendItems(placeholders)
         
@@ -213,10 +226,23 @@ extension HomeViewController: UICollectionViewDelegate {
         let contentHeight = scrollView.contentSize.height
         let height = scrollView.frame.size.height
         
-        // Check if we're near the bottom and not already loading
-        if offsetY > contentHeight - height - 100 {
+        if offsetY > contentHeight - height - 5 {
             Task {
                await self.viewModel?.fetchProducts(incrementPagination: true)
+            }
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if isShimmering == false {
+            let product = viewModel?.getProducts()[indexPath.row]
+            
+            if let product {
+                let detailsViewModel = DetailsViewModel(product: product)
+                let detailsVC = DetailsViewController()
+                detailsVC.viewModel = detailsViewModel
+                
+                self.navigationController?.pushViewController(detailsVC, animated: true)
             }
         }
     }

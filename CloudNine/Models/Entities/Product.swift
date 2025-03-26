@@ -8,16 +8,8 @@
 import Foundation
 
 // MARK: - Product
-struct ProductResponse: Codable, Hashable, Equatable {
-    static func == (lhs: ProductResponse, rhs: ProductResponse) -> Bool {
-        lhs.uniqueID == rhs.uniqueID
-    }
-    
-    let uniqueID = UUID()
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(uniqueID)
-    }
-    
+struct ProductResponse: Codable {
+    let uuid = UUID()
     let id: Int?
     let title: String?
     let price: Double?
@@ -36,3 +28,12 @@ struct ProductResponse: Codable, Hashable, Equatable {
     }
 }
 
+extension ProductResponse: Hashable, Equatable {
+    static func ==(lhs: ProductResponse, rhs: ProductResponse) -> Bool {
+        return lhs.uuid == rhs.uuid
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(uuid)
+    }
+}

@@ -32,13 +32,11 @@ final class CoreDataManager: CoreDataManagerProtocol {
 extension CoreDataManager {
     
     func saveProducts(from response: [ProductResponse]) async throws {
-        let context = persistentContainer.newBackgroundContext()
+        let context = persistentContainer.viewContext
         
         try await context.perform {
             
-            let fetchRequest: NSFetchRequest<Product> = Product.fetchRequest()
-            let existingProducts = try context.fetch(fetchRequest)
-            existingProducts.forEach { context.delete($0) }
+            self.delete(entityName: "Product")
             
             for (index, productResponse) in response.enumerated() {
                 let storageProduct = Product(context: context)
@@ -64,14 +62,13 @@ extension CoreDataManager {
         return (try? mainContext.fetch(request)) ?? []
     }
     
-    private func updateStorageProduct(_ storageProduct: Product, with productResponse: ProductResponse, index: Int) {
-        storageProduct.title       = productResponse.title
-        storageProduct.price       = productResponse.price ?? 0.0
-        storageProduct.category    = productResponse.category
-        storageProduct.desc        = productResponse.description
-        storageProduct.imageURL    = productResponse.image
-        storageProduct.orderNumber = Int64(index)
-        storageProduct.rateCount   = Int64(productResponse.rating?.count ?? 0)
-        storageProduct.rating      = productResponse.rating?.rate ?? 0.0
+    func delete(entityName: String) {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        do {
+            try persistentContainer.viewContext.execute(deleteRequest)
+        } catch let error as NSError {
+            debugPrint(error)
+        }
     }
 }
