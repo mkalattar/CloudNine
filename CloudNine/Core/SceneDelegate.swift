@@ -21,8 +21,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // TODO: Replace with a proper DI
         let networkManager = NetworkManager()
         let coreDataManager = CoreDataManager()
+        let userDefaultsManager = UserDefaultsManager()
+        
         let homeRepo = HomeRepo(coreDataManager: coreDataManager, networkManager: networkManager)
-        let viewModel = HomeViewModel(homeRepo: homeRepo)
+        let viewModel = HomeViewModel(homeRepo: homeRepo, userDefaultManager: userDefaultsManager)
         
         let rootViewController = HomeViewController()
         rootViewController.viewModel = viewModel

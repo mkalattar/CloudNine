@@ -6,11 +6,12 @@
 //
 
 import UIKit
+import SkeletonView
 
 class ProductView: UIView {
     
     // MARK: - Variables & UI Elements
-    private var layout: LayoutState = .grid
+    private var layout: LayoutStyle = .grid
     
     private lazy var productImageView: UIImageView = {
         return createImageView()
@@ -39,7 +40,7 @@ class ProductView: UIView {
         setupView()
     }
     
-    init(layout: LayoutState) {
+    init(layout: LayoutStyle) {
         super.init(frame: .zero)
         self.layout = layout
         self.setupView()
@@ -48,6 +49,7 @@ class ProductView: UIView {
     // MARK: - Private methods
     private func setupView() {
         backgroundColor = .systemBackground
+        layer.cornerRadius = 16
         
         addSubview(productImageView)
         addSubview(titleLabel)
@@ -69,6 +71,7 @@ class ProductView: UIView {
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 16
         imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.isSkeletonable = true
         
         return imageView
     }
@@ -79,13 +82,14 @@ class ProductView: UIView {
         label.numberOfLines = 2
         label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
+        label.isSkeletonable = true
         
         return label
     }
     
     private func createPriceLabel() -> UILabel {
         let label = UILabel()
-        label.font = .systemFont(ofSize: layout == .grid ? 12 : 14, weight: .regular)
+        label.font = .systemFont(ofSize: layout == .grid ? 12 : 14, weight: .bold)
         label.numberOfLines = 1
         label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -121,7 +125,7 @@ class ProductView: UIView {
             priceLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
             
             // rating constraints
-            ratingLabel.topAnchor.constraint(equalTo: priceLabel.bottomAnchor, constant: 2),
+            ratingLabel.topAnchor.constraint(equalTo: priceLabel.bottomAnchor, constant: 0),
             ratingLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
             ratingLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
         ])
@@ -147,13 +151,13 @@ class ProductView: UIView {
             
             // rating constraints
             priceLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
-            priceLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            priceLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
         ])
     }
     
     // MARK: - Public Methods
-    func setImage() {
-        self.productImageView.image = UIImage(named: "testImg")
+    func setImage(url: String?) {
+        self.productImageView.load(urlString: url ?? "")
     }
     
     func set(title: String?) {
@@ -175,11 +179,10 @@ class ProductView: UIView {
     }
     
     func set(rating: Double?, peopleCount: Int?) {
-        let imgConfig = UIImage.SymbolConfiguration(pointSize: layout == .grid ? 12 : 14, weight: .bold, scale: .medium)
+        let imgConfig = UIImage.SymbolConfiguration(pointSize: layout == .grid ? 10 : 12, weight: .bold, scale: .medium)
         
         let starAttachment = NSTextAttachment()
-        starAttachment.image = UIImage(systemName: "star.fill", withConfiguration: imgConfig)?.withTintColor(.greenMint,
-                                                                               renderingMode: .alwaysOriginal)
+        starAttachment.image = UIImage(systemName: "star.fill", withConfiguration: imgConfig)?.withTintColor(.greenMint, renderingMode: .alwaysOriginal)
         
         let starString = NSAttributedString(attachment: starAttachment)
         let ratingString = NSAttributedString(string: " \(rating ?? 0.0) ", attributes: [
@@ -201,6 +204,6 @@ class ProductView: UIView {
     }
 }
 
-enum LayoutState {
+enum LayoutStyle {
     case grid, list
 }

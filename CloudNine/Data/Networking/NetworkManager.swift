@@ -11,7 +11,7 @@ import Foundation
 
 // MARK: - Network Protocols
 protocol NetworkManagerProtocol {
-    func performRequest<T: Decodable>(with networkBuilder: NetworkRequestBuilder, dataType: T.Type) async throws -> T
+    func performRequest<T: Decodable>(with networkBuilder: NetworkRequestBuilder, dataType: T.Type) async throws -> T?
 }
 
 protocol NetworkBuilderProtocol {
@@ -36,6 +36,7 @@ enum CloudNineError: LocalizedError {
     case invalidServer(statusCode: Int)
     case decodingError(underlying: Error)
     case badRequest
+    case unknownError
     
     var errorDescription: String? {
         switch self {
@@ -47,6 +48,8 @@ enum CloudNineError: LocalizedError {
             return "Failed to decode response: \(underlying.localizedDescription)"
         case .badRequest:
             return "Invalid request. Please check your parameters."
+        case .unknownError:
+            return "Something wrong happened, Retry again."
         }
     }
 }
@@ -101,28 +104,34 @@ class NetworkRequestBuilder: NetworkBuilderProtocol {
 
 class NetworkManager: NetworkManagerProtocol {
     private let session: URLSession
+    private var isFetchingTracker: [String: Bool] = [:] // Handles not calling the same API while it's fetching still.
     
     init(session: URLSession = .shared) {
         self.session = session
     }
     
-    func performRequest<T: Decodable>(with networkBuilder: NetworkRequestBuilder, dataType: T.Type) async throws -> T {
+    func performRequest<T: Decodable>(with networkBuilder: NetworkRequestBuilder, dataType: T.Type) async throws -> T? {
         let request = try networkBuilder.buildRequest()
-        
-        let (data, response) = try await session.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudNineError.invalidServer(statusCode: -1)
-        }
-        
-        guard (200...299).contains(httpResponse.statusCode) else {
-            throw CloudNineError.invalidServer(statusCode: httpResponse.statusCode)
-        }
-        
+
         do {
-            return try JSONDecoder().decode(T.self, from: data)
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw CloudNineError.invalidServer(statusCode: -1)
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                throw CloudNineError.invalidServer(statusCode: httpResponse.statusCode)
+            }
+            
+            do {
+                return try JSONDecoder().decode(T.self, from: data)
+            } catch {
+                throw CloudNineError.decodingError(underlying: error)
+            }
+            
         } catch {
-            throw CloudNineError.decodingError(underlying: error)
+            throw CloudNineError.unknownError
         }
     }
 }
